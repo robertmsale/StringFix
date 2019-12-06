@@ -1,3 +1,4 @@
+
 public extension StringProtocol {
     subscript(_ offset: Int)                     -> Element     { self[index(startIndex, offsetBy: offset)] }
     subscript(_ range: Range<Int>)               -> SubSequence { prefix(range.lowerBound+range.count).suffix(range.count) }
@@ -8,7 +9,7 @@ public extension StringProtocol {
 }
 
 public extension LosslessStringConvertible {
-    public var string: String { .init(self) }
+    var string: String { .init(self) }
 }
 
 public extension BidirectionalCollection {
@@ -17,3 +18,4 @@ public extension BidirectionalCollection {
         return self[i]
     }
 }
+
