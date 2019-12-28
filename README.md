@@ -9,7 +9,7 @@ This package requires Swift 5 and Xcode 11 (package is untested on earlier versi
 ### Add To Project
 Add this package to your package.swift
 ```swift
-.package(url: "https://github.com/" from: "1.0.0")
+.package(url: "https://github.com/robertmsale/StringFix" from: "1.0.0")
 ```
 
 ## Usage
