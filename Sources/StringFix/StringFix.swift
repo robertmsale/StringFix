@@ -85,12 +85,16 @@ public extension StringProtocol {
     }
     
     /// Ensures prefix exists and, if not, returns a prepended string
+    ///
+    /// - parameter prefix: The string to ensure exists
     func ensureLeft(_ prefix: String) -> String {
         if self[self.startIndex..<self.index(self.startIndex, offsetBy: prefix.count)].contains(prefix) { return "\(self)" }
         else { return "\(prefix)\(self)" }
     }
     
     /// Ensures suffix exists and, if not, returns an appended string
+    ///
+    /// - parameter suffix: The string to ensure exists
     func ensureRight(_ suffix: String) -> String {
         if self[self.index(self.endIndex, offsetBy: -suffix.count)..<self.endIndex].contains(suffix) { return "\(self)"}
         else { return "\(self)\(suffix)"}
@@ -155,6 +159,26 @@ public extension StringProtocol {
         }
         
         return stringBuilder
+    }
+    
+    /// Pad the left side of the string with another string
+    func padLeft(_ count: Int, _ with: String = " ") -> String {
+        return "\(Array(repeating: with, count: count).joined())\(String(self))"
+    }
+    
+    /// Pad the right side of the string with another string
+    func padRight(_ count: Int, _ with: String = " ") -> String {
+        return "\(String(self))\(Array(repeating: with, count: count))"
+    }
+    
+    /// Pad both sides of the string with another string
+    func pad(_ count: Int, _ with: String = " ") -> String {
+        return String(self.padLeft(count, with).padRight(count, with))
+    }
+    
+    /// Repeat string a number of times
+    func times(_ count: Int) -> String {
+        return Array(repeating: String(self), count: (count > 1 ? count : 1)).joined()
     }
 }
 

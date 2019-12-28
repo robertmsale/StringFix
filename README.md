@@ -99,4 +99,29 @@ Subscripts can be chained together
 ```swift
 " \t Hello World! \t  ".trim()          // "Hello World!"
 ```
+### stripPunctuation() -> String
+```swift
+"So... many, do:t(s)!".stripPunctuation()   // "So many dots"
+````
 
+### padLeft(_ count: Int, _ with: String = " ") -> String
+```swift
+"Pad me please".padLeft(4)              // "    Pad me please"
+"Cool words".padLeft(2, "~")            // "~~Cool words"
+```
+
+### padRight(_ count: Int, _ with: String = " ") -> String
+```swift
+"Foobar".padRight(4)              // "Foobar    "
+"Hello".padRight(3, "!")            // "Hello!!!"
+```
+
+### pad(_ count: Int, _ with: String = " ") -> String
+```swift
+"Swift is awesome".pad(3)              // "   Swift is awesome   "
+"Hello".padRight(3, "!")            // "Hello!!!"
+```
+### times(_ count: Int) -> String
+```swift
+"Foo".times(5)          // "FooFooFooFooFoo"
+```
