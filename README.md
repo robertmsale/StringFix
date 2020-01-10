@@ -93,7 +93,7 @@ Subscripts can be chained together
 ```
 ### trimRight() -> SubSequence
 ```swift
-"Hello World!   \n\t  ".trimLeft()      // "Hello World!"
+"Hello World!   \n\t  ".trimRight()      // "Hello World!"
 ```
 ### trim() -> SubSequence
 ```swift
