@@ -42,30 +42,39 @@ public extension StringProtocol {
     /// - returns: The subsequence (String, Substring, etc) between two bookends, or returns the whole string intact if subsequence cannot be found
     func between( _ begin: String, _ end: String? = nil ) -> SubSequence {
         let outer = outerBetween( begin, end )
-        return outer[ outer.index( outer.startIndex, offsetBy: begin.count ) ..< outer.index ( outer.endIndex, offsetBy: -(end?.count ?? begin.count ) ) ]
+        return outer[
+            outer.index( outer.startIndex, offsetBy: begin.count )
+                ..< outer.index ( outer.endIndex, offsetBy: -(end?.count ?? begin.count ) ) ]
     }
     
     /// Converts a string to camelcase
     func camelize() -> String {
-        var nonLetterIndexes: [String.Index] = []
+        var wordIndexes: [(String.Index, String.Index)] = []
+        var inWord: Bool = false
         
+        var si: String.Index = self.startIndex
         for ( i, v ) in self.enumerated() {
-            if ( !v.isLetter ) { nonLetterIndexes.append( self.index( startIndex, offsetBy: i ) ) }
+            if ( v.isLetter || v.isNumber ) {
+                if !inWord {
+                    inWord = true
+                    si = self.index(startIndex, offsetBy: i)
+                }
+                if inWord && self.count - 1 == i {
+                    wordIndexes.append( (si, self.index(startIndex, offsetBy: i)) )
+                }
+            }
+            else {
+                if inWord {
+                    inWord = false
+                    wordIndexes.append( (si, self.index(startIndex, offsetBy: i-1)) )
+                }
+            }
         }
         
         var stringBuilder = ""
-        if nonLetterIndexes.count > 0 {
-            for i in 0..<nonLetterIndexes.count {
-                if i == 0 && nonLetterIndexes[i] != startIndex {
-                    stringBuilder += "\(self[ startIndex ..< nonLetterIndexes[i] ])".lowercased() + "\(nonLetterIndexes.count > 1 ? self[ index( after: nonLetterIndexes[i]) ..< nonLetterIndexes[i + 1] ] : self[ index( after: nonLetterIndexes[i] ) ..< endIndex])".lowercased().capitalized
-                } else if i == nonLetterIndexes.count - 1 && nonLetterIndexes[i] != self.endIndex {
-                    stringBuilder += "\(self[ index( after: nonLetterIndexes[i] ) ..< endIndex ])".lowercased().capitalized
-                } else {
-                    stringBuilder += "\(self[ index( after: nonLetterIndexes[i] ) ..< nonLetterIndexes[i + 1] ])".lowercased().capitalized
-                }
-            }
-        } else {
-            stringBuilder += "\(self[ startIndex ..< (firstIndex(where: { ($0.isUppercase) && ($0 != self[startIndex]) }) ?? endIndex) ])".lowercased() + "\(self[ (firstIndex(where: { ($0.isUppercase) && ($0 != self[startIndex]) }) ?? endIndex ) ..< endIndex])"
+        for i in 0...wordIndexes.count-1 {
+            if i == 0 { stringBuilder.append( self[wordIndexes[i].0...wordIndexes[i].1].lowercased() ) }
+            else { stringBuilder.append( self[wordIndexes[i].0...wordIndexes[i].1].capitalized ) }
         }
         
         return stringBuilder
@@ -76,10 +85,10 @@ public extension StringProtocol {
         var stringBuilder = ""
         for (i,v) in self.enumerated() {
             if v.isWhitespace {
-                if (i == self.count - 1) && (!v.isWhitespace) { stringBuilder += "\(v)" }
+                if (i == self.count - 1) && (!v.isWhitespace) { stringBuilder.append(v) }
                 else if (i == self.count - 1) { break }
-                else if !self[self.index(self.startIndex, offsetBy: i+1)].isWhitespace { stringBuilder += "\(v)" }
-            } else { stringBuilder += "\(v)" }
+                else if !self[self.index(self.startIndex, offsetBy: i+1)].isWhitespace { stringBuilder.append(v) }
+            } else { stringBuilder.append(v) }
         }
         return String(stringBuilder.trim())
     }
@@ -88,16 +97,16 @@ public extension StringProtocol {
     ///
     /// - parameter prefix: The string to ensure exists
     func ensureLeft(_ prefix: String) -> String {
-        if self[self.startIndex..<self.index(self.startIndex, offsetBy: prefix.count)].contains(prefix) { return "\(self)" }
-        else { return "\(prefix)\(self)" }
+        if self[self.startIndex..<self.index(self.startIndex, offsetBy: prefix.count)].contains(prefix) { return String(self) }
+        else { return prefix + self }
     }
     
     /// Ensures suffix exists and, if not, returns an appended string
     ///
     /// - parameter suffix: The string to ensure exists
     func ensureRight(_ suffix: String) -> String {
-        if self[self.index(self.endIndex, offsetBy: -suffix.count)..<self.endIndex].contains(suffix) { return "\(self)"}
-        else { return "\(self)\(suffix)"}
+        if self[self.index(self.endIndex, offsetBy: -suffix.count)..<self.endIndex].contains(suffix) { return String(self) }
+        else { return self + suffix }
     }
     
     /// Is this string Alphabetical
@@ -114,7 +123,24 @@ public extension StringProtocol {
     
     /// Does this string only contain numbers and decimal point
     func isNumeric() -> Bool {
-        for (_, v) in self.enumerated() { if (!v.isNumber) && (v != ".") { return false } }
+        var decimalFound: Bool = false;
+        for (_, v) in self.enumerated() {
+            if (!v.isNumber) && (v != ".") {
+                return false
+            }
+            if (v == ".") {
+                if (decimalFound) { return false }
+                decimalFound = true
+            }
+        }
+        return true
+    }
+    
+    /// Does this string only contain numbers
+    func isIntegral() -> Bool {
+        for (_, v) in self.enumerated() {
+            if (!v.isNumber) { return false }
+        }
         return true
     }
     
@@ -139,11 +165,11 @@ public extension StringProtocol {
         
         for ( i, v ) in self.enumerated() {
             if i == 0 {
-                if self[index(startIndex, offsetBy: i)].isLetter { stringBuilder += "\(v)" }
+                if self[index(startIndex, offsetBy: i)].isLetter { stringBuilder.append(v) }
             } else {
-                if self[index(startIndex, offsetBy: i)].isLetter { stringBuilder += "\(v)" }
+                if self[index(startIndex, offsetBy: i)].isLetter { stringBuilder.append(v) }
                 else {
-                    if (self[index(startIndex, offsetBy: i + 1)].isLetter) && (i < self.count - 1) { stringBuilder += "-"}
+                    if (i < self.count - 2) && (self[index(startIndex, offsetBy: i + 1)].isLetter) { stringBuilder.append("-") }
                 }
             }
         }
@@ -154,8 +180,8 @@ public extension StringProtocol {
     func stripPunctuation() -> String {
         var stringBuilder: String = ""
         
-        for ( i, v ) in self.enumerated() {
-            if (v.isLetter) || (v.isWhitespace) { stringBuilder += "\(v)" }
+        for ( _, v ) in self.enumerated() {
+            if (!v.isPunctuation) { stringBuilder.append(v) }
         }
         
         return stringBuilder
@@ -163,22 +189,22 @@ public extension StringProtocol {
     
     /// Pad the left side of the string with another string
     func padLeft(_ count: Int, _ with: String = " ") -> String {
-        return "\(Array(repeating: with, count: count).joined())\(String(self))"
+        return Array(repeating: with, count: count).joined() + self
     }
     
     /// Pad the right side of the string with another string
     func padRight(_ count: Int, _ with: String = " ") -> String {
-        return "\(String(self))\(Array(repeating: with, count: count))"
+        return self + Array(repeating: with, count: count).joined()
     }
     
     /// Pad both sides of the string with another string
     func pad(_ count: Int, _ with: String = " ") -> String {
-        return String(self.padLeft(count, with).padRight(count, with))
+        return self.padLeft(count, with).padRight(count, with)
     }
     
     /// Repeat string a number of times
     func times(_ count: Int) -> String {
-        return Array(repeating: String(self), count: (count > 1 ? count : 1)).joined()
+        return Array(repeating: self, count: (count > 1 ? count : 1)).joined()
     }
 }
 
