@@ -47,50 +47,30 @@ public extension StringProtocol {
                 ..< outer.index ( outer.endIndex, offsetBy: -(end?.count ?? begin.count ) ) ]
     }
     
+    /// Makes first letter capital and remaining letters lowercase
+    func capitalize() -> String {
+        return self[0].uppercased() + self[1..<self.count].lowercased()
+    }
+    
     /// Converts a string to camelcase
     func camelize() -> String {
-        var wordIndexes: [(String.Index, String.Index)] = []
-        var inWord: Bool = false
-        
-        var si: String.Index = self.startIndex
-        for ( i, v ) in self.enumerated() {
-            if ( v.isLetter || v.isNumber ) {
-                if !inWord {
-                    inWord = true
-                    si = self.index(startIndex, offsetBy: i)
-                }
-                if inWord && self.count - 1 == i {
-                    wordIndexes.append( (si, self.index(startIndex, offsetBy: i)) )
-                }
-            }
-            else {
-                if inWord {
-                    inWord = false
-                    wordIndexes.append( (si, self.index(startIndex, offsetBy: i-1)) )
-                }
-            }
-        }
-        
+        let foundWords = words()
+        guard !foundWords.isEmpty else { return "" }
         var stringBuilder = ""
-        for i in 0...wordIndexes.count-1 {
-            if i == 0 { stringBuilder.append( self[wordIndexes[i].0...wordIndexes[i].1].lowercased() ) }
-            else { stringBuilder.append( self[wordIndexes[i].0...wordIndexes[i].1].capitalized ) }
+        for (idx, word) in foundWords.enumerated() {
+            if idx == 0 {
+                stringBuilder.append(word.lowercased())
+                continue
+            }
+            stringBuilder.append(word[0].uppercased())
+            stringBuilder.append(word[1..<word.count].lowercased())
         }
-        
         return stringBuilder
     }
     
     /// Removes excess whitespace, including new lines, carriage returns, tab space, etc.
     func collapseWhitespace() -> String {
-        var stringBuilder = ""
-        for (i,v) in self.enumerated() {
-            if v.isWhitespace {
-                if (i == self.count - 1) && (!v.isWhitespace) { stringBuilder.append(v) }
-                else if (i == self.count - 1) { break }
-                else if !self[self.index(self.startIndex, offsetBy: i+1)].isWhitespace { stringBuilder.append(v) }
-            } else { stringBuilder.append(v) }
-        }
-        return String(stringBuilder.trim())
+        return String(self.trim())
     }
     
     /// Ensures prefix exists and, if not, returns a prepended string
@@ -111,24 +91,22 @@ public extension StringProtocol {
     
     /// Is this string Alphabetical
     func isAlpha() -> Bool {
-        for (_, v) in self.enumerated() { if !v.isLetter { return false } }
-        return true
+        return allSatisfy { c in c.isLetter }
     }
     
     /// Is this string AlphaNumeric
     func isAlphaNumeric() -> Bool {
-        for (_, v) in self.enumerated() { if !v.isLetter && !v.isNumber { return false } }
-        return true
+        return allSatisfy{ c in c.isLetter || c.isNumber }
     }
     
     /// Does this string only contain numbers and decimal point
     func isNumeric() -> Bool {
         var decimalFound: Bool = false;
-        for (_, v) in self.enumerated() {
-            if (!v.isNumber) && (v != ".") {
+        for c in self {
+            if (!c.isNumber) && (c != ".") {
                 return false
             }
-            if (v == ".") {
+            if (c == ".") {
                 if (decimalFound) { return false }
                 decimalFound = true
             }
@@ -138,16 +116,12 @@ public extension StringProtocol {
     
     /// Does this string only contain numbers
     func isIntegral() -> Bool {
-        for (_, v) in self.enumerated() {
-            if (!v.isNumber) { return false }
-        }
-        return true
+        self.allSatisfy { $0.isNumber }
     }
     
     /// Is this string not nil but also empty or contain only whitespace?
     func isEmpty() -> Bool {
-        for (_, v) in self.enumerated() { if (!v.isWhitespace) && (v != " ") { return false } }
-        return true
+        return self.count == 0 || self.allSatisfy { $0.isWhitespace }
     }
     
     /// Remove whitespace from the left
@@ -159,21 +133,35 @@ public extension StringProtocol {
     /// Remove whitepace from the left and right
     func trim() -> SubSequence { self.trimLeft().trimRight() }
     
-    /// Remove the shell from a snail
-    func slugify() -> String {
-        var stringBuilder: String = ""
+    /// Convert to Slug (i.e. kebabCase) with option to preserve case.
+    func slugify(preserveCase: Bool = false) -> String {
+        return words()
+            .map { preserveCase ? $0.string : $0.lowercased() }
+            .joined(separator: "-")
+    }
+    
+    var snakeCase: String {
+        return words().map { $0.lowercased() }.joined(separator: "_")
+    }
+    
+    /// Returns all the words in a string
+    func words() -> [SubSequence] {
+        if self.count == 0 { return [] }
+        var result: [SubSequence] = []
         
-        for ( i, v ) in self.enumerated() {
-            if i == 0 {
-                if self[index(startIndex, offsetBy: i)].isLetter { stringBuilder.append(v) }
-            } else {
-                if self[index(startIndex, offsetBy: i)].isLetter { stringBuilder.append(v) }
-                else {
-                    if (i < self.count - 2) && (self[index(startIndex, offsetBy: i + 1)].isLetter) { stringBuilder.append("-") }
-                }
+        var curr: SubSequence = self[startIndex..<endIndex]
+        while curr.count != 0 {
+            guard let firstLetter = curr.firstIndex(where: { $0.isLetter }) else { break }
+            let trimmed = curr[firstLetter..<endIndex]
+            guard let afterLastLetter = trimmed.firstIndex(where: { !$0.isLetter }) else {
+                result.append(trimmed)
+                break
             }
+            result.append(curr[firstLetter..<afterLastLetter])
+            curr = curr[afterLastLetter..<endIndex]
         }
-        return stringBuilder.lowercased()
+        
+        return result
     }
     
     /// Remove all punctuation

@@ -24,7 +24,7 @@ final class StringFixTests: XCTestCase {
     
     func testCamelize() {
         XCTAssertEqual(" Big test big pass pls".camelize(), "bigTestBigPassPls")
-        XCTAssertEqual("B!g t3st b!g p@ss pls".camelize(), "bGT3StBGPSsPls")
+        XCTAssertEqual("B!g t3st b!g p@ss pls".camelize(), "bGTStBGPSsPls")
         XCTAssertEqual("i-am-a-kebab_and_a_snake".camelize(), "iAmAKebabAndASnake")
     }
     
@@ -56,12 +56,19 @@ final class StringFixTests: XCTestCase {
     func testSlugify() {
         XCTAssertEqual("have a good day!".slugify(), "have-a-good-day")
         XCTAssertEqual("you!really%%%Shouldn't Have".slugify(), "you-really-shouldn-t-have")
+        XCTAssertEqual("I lOvE StrInGFIX".slugify(preserveCase: true), "I-lOvE-StrInGFIX")
     }
     
     func testPadding() {
         XCTAssertEqual("derp".padLeft(5, "z"), "zzzzzderp")
         XCTAssertEqual("derp".padRight(5, "z"), "derpzzzzz")
         XCTAssertEqual("derp".pad(5, "z"), "zzzzzderpzzzzz")
+    }
+    
+    func testWords() {
+        let words = "sometimes I LiKe to TeSt".words().map { "\($0)" }
+        XCTAssertEqual(words, ["sometimes", "I", "LiKe", "to", "TeSt"])
+        XCTAssertEqual("   \n\t  ::: !@#$%!%".words().map { "\($0)" }, [])
     }
 
     static var allTests = [
@@ -74,5 +81,6 @@ final class StringFixTests: XCTestCase {
         ("Trim Test", testTrim),
         ("Slugify Test", testSlugify),
         ("Padding Test", testPadding),
+        ("Words Test", testWords),
     ]
 }
